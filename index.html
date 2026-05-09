@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor Laporan PKL Standar Resmi</title>
+    <title>Generator Laporan PKL SMK Resmi</title>
     <style>
         /* --- RESET & DASAR --- */
         :root {
@@ -25,7 +25,6 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            /* Inisialisasi Counter untuk Nomor Halaman */
             counter-reset: roman-page arabic-page; 
         }
 
@@ -41,7 +40,6 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             z-index: 10;
         }
-
         .app-title { font-weight: 700; color: var(--text-input); font-size: 1.1rem; }
         .app-subtitle { font-size: 0.85rem; color: #64748b; margin-left: 10px; }
 
@@ -72,12 +70,12 @@
 
         /* --- SIDEBAR KIRI (EDITOR) --- */
         .editor-sidebar {
-            width: 420px;
+            width: 480px;
             background: var(--bg-sidebar);
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            min-width: 320px;
+            min-width: 350px;
         }
 
         .sidebar-header {
@@ -95,7 +93,7 @@
             padding: 1.5rem;
         }
 
-        /* ACCORDION STYLE UNTUK BAB */
+        /* ACCORDION STYLE */
         .accordion-item {
             margin-bottom: 1rem;
             border: 1px solid var(--border);
@@ -137,29 +135,33 @@
         input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
         textarea { min-height: 100px; resize: vertical; line-height: 1.5; }
         .helper { font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem; }
-        
-        /* Input Judul Bab agar menonjol */
+        input[type="file"] { padding: 4px; font-size: 0.85rem; }
         .chapter-title-input { background-color: #f0f9ff; border-color: #bae6fd; color: #0369a1; font-weight: bold; }
+        
+        /* Table Builder */
+        .table-builder-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .btn-small { padding: 4px 8px; font-size: 0.75rem; cursor: pointer; border: 1px solid #ddd; background: #fff; border-radius: 4px;}
+        .btn-danger { color: red; border-color: red; }
 
         /* --- AREA KANAN (PREVIEW) --- */
         .preview-area {
             flex: 1;
-            background-color: #525659; /* Warna abu gelap seperti PDF Reader */
+            background-color: #525659;
             overflow-y: auto;
             display: flex;
             justify-content: center;
             padding: 2rem;
         }
 
-        /* --- DOKUMEN A4 (TIMES NEW ROMAN, ETC) --- */
+        /* --- DOKUMEN A4 (TIMES NEW ROMAN, DLL) --- */
         .document-page {
             background: white;
             width: 210mm;
             min-height: 297mm;
-            padding: 3cm 3cm 3cm 4cm !important; /* MARGIN RESMI */
+            padding: 3cm 3cm 3cm 4cm !important; /* MARGIN RESMI: Kiri 4, Kanan 3, Atas 3, Bawah 3 */
             margin-bottom: 2rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            position: relative; /* Penting untuk posisi nomor halaman */
+            position: relative; 
             font-family: 'Times New Roman', Times, serif;
             font-size: 12pt;
             line-height: 1.5;
@@ -167,100 +169,68 @@
             text-align: justify;
         }
 
-        /* CLASS HELPER UNTUK DOKUMEN */
+        /* CLASS HELPER DOKUMEN */
         .doc-center { text-align: center; }
         .doc-bold { font-weight: bold; }
         .doc-ucase { text-transform: uppercase; }
-        .doc-italic { font-style: italic; }
         .doc-indent { text-indent: 1.25cm; margin-bottom: 12pt; }
         .doc-no-indent { margin-bottom: 12pt; text-align: justify; }
         
         .doc-title-main { font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 24pt; text-align: center; }
-        .doc-chapter-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; text-align: center; margin-bottom: 18pt; margin-top: 24pt; }
-        .doc-sub-chapter { font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
-
+        .doc-chapter-title { font-size: 14pt; font-weight: bold; text-transform: uppercase; text-align: center; margin-bottom: 18pt; margin-top: 24pt; }
+        .doc-sub-chapter { font-size: 12pt; font-weight: bold; margin-top: 12pt; margin-bottom: 6pt; }
+        
         .doc-table { width: 100%; border-collapse: collapse; margin: 12pt 0; font-size: 11pt; }
         .doc-table td, .doc-table th { border: 1px solid black; padding: 6px; vertical-align: top; }
+        .doc-table th { text-align: center; font-weight: bold; }
 
-        /* --- LOGIKA NOMOR HALAMAN (CSS COUNTER) --- */
-        
-        /* 1. Halaman Pendahuluan (Romawi: i, ii, iii...) */
-        /* Halaman dengan class ini akan menampilkan nomor Romawi */
+        /* TOC Leader Dots Style */
+        .toc-row { display: flex; align-items: baseline; margin-bottom: 6px; }
+        .toc-text { flex: 1; padding-right: 10px; }
+        .toc-dots { border-bottom: 1px dotted black; flex-grow: 1; margin: 0 5px; position: relative; top: -3px; }
+        .toc-page { text-align: right; width: 40px; }
+
+        /* --- LOGIKA NOMOR HALAMAN --- */
+        /* 1. Pendahuluan (Romawi) */
         .page-front-matter::after {
             counter-increment: roman-page;
             content: counter(roman-page, lower-roman);
             position: absolute;
-            bottom: 15px; 
-            left: 50%;      /* Posisi Horizontal Tengah */
-            transform: translateX(-50%); /* Tepat di tengah */
-            font-size: 12pt;
-            font-family: 'Times New Roman', serif;
+            bottom: 15px; left: 50%; transform: translateX(-50%);
+            font-size: 12pt; font-family: 'Times New Roman', serif;
         }
-
-        /* 2. Halaman Isi (Arab: 1, 2, 3...) */
-        /* Halaman dengan class ini akan menampilkan nomor Arab */
+        /* 2. Isi (Arab) */
         .page-content::after {
             counter-increment: arabic-page;
             content: counter(arabic-page);
             position: absolute;
-            bottom: 15px;
-            left: 50%;      /* Posisi Horizontal Tengah */
-            transform: translateX(-50%);
-            font-size: 12pt;
-            font-family: 'Times New Roman', serif;
+            bottom: 15px; left: 50%; transform: translateX(-50%);
+            font-size: 12pt; font-family: 'Times New Roman', serif;
         }
+        .restart-number { counter-reset: arabic-page; }
 
-        /* Reset counter arabic ke 0 agar Bab I mulai dari 1 */
-        .restart-number {
-            counter-reset: arabic-page;
-        }
-
-        /* --- PRINT MEDIA QUERY (SANGAT PENTING) --- */
+        /* --- PRINT MEDIA --- */
         @media print {
             body { height: auto; overflow: visible; background: white; }
             header, .editor-sidebar, .btn-print-float { display: none !important; }
             .main-container { display: block; overflow: visible; }
-            .preview-area { 
-                display: block; 
-                padding: 0; 
-                overflow: visible; 
-                background: white; 
-            }
+            .preview-area { display: block; padding: 0; overflow: visible; background: white; }
             .document-page {
-                width: 100%;
-                margin: 0;
-                padding: 3cm 3cm 3cm 4cm !important; /* PAKSA MARGIN */
-                box-shadow: none;
-                page-break-after: always;
-                min-height: 297mm;
+                width: 100%; margin: 0; padding: 3cm 3cm 3cm 4cm !important;
+                box-shadow: none; page-break-after: always; min-height: 297mm;
             }
             @page { size: A4; margin: 0; }
         }
 
-        /* --- FLOATING PRINT BUTTON --- */
+        /* --- FLOATING BUTTON --- */
         .btn-print-float {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: #dc2626;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 12px 24px;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            cursor: pointer;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            position: fixed; bottom: 30px; right: 30px;
+            background: #dc2626; color: white; border: none;
+            border-radius: 50px; padding: 12px 24px; font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer; z-index: 100;
+            display: flex; align-items: center; gap: 8px;
         }
         .btn-print-float:hover { background: #b91c1c; transform: translateY(-2px); }
-
-        /* --- DAFTAR ISI STYLE (OTOMATIS) --- */
-        .toc-chapter { margin-bottom: 6px; font-weight: bold; margin-top: 10px; }
-        .toc-sub { padding-left: 20px; display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .toc-page-num { font-family: 'Times New Roman', serif; width: 30px; text-align: right;}
 
     </style>
 </head>
@@ -269,8 +239,8 @@
     <!-- HEADER -->
     <header>
         <div>
-            <span class="app-title">Editor Laporan PKL</span>
-            <span class="app-subtitle">Pengesahan = i | Bab I = 1</span>
+            <span class="app-title">Laporan PKL SMK</span>
+            <span class="app-subtitle">Resmi • Lengkap • Siap Cetak</span>
         </div>
         <div class="header-actions">
             <button onclick="resetData()" style="color: #dc2626; border-color: #dc2626; margin-right: 5px;">Reset</button>
@@ -282,337 +252,285 @@
         
         <!-- SIDEBAR INPUT -->
         <aside class="editor-sidebar">
-            <div class="sidebar-header">
-                Isi Data Laporan Anda
-            </div>
-            
+            <div class="sidebar-header">Formulir Laporan PKL</div>
             <div class="form-scroll-area">
 
-                <!-- 1. COVER -->
+                <!-- 1. DATA SISWA & COVER -->
                 <div class="accordion-item active">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        Cover & Identitas <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Cover & Data Siswa <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Judul Laporan</label>
-                            <input type="text" id="in-judul" oninput="updateDoc()" placeholder="Contoh: PELAKSANAAN PKL...">
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Siswa</label>
-                            <input type="text" id="in-nama" oninput="updateDoc()" placeholder="Nama Lengkap">
-                        </div>
-                        <div class="form-group">
-                            <label>NIS / NIM</label>
-                            <input type="text" id="in-nis" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Jurusan / Prodi</label>
-                            <input type="text" id="in-jurusan" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Sekolah / Kampus</label>
-                            <input type="text" id="in-sekolah" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Perusahaan PKL</label>
-                            <input type="text" id="in-perusahaan" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Tahun Pelajaran</label>
-                            <input type="text" id="in-tahun" oninput="updateDoc()">
-                        </div>
+                        <div class="form-group"><label>Logo Sekolah</label><input type="file" id="in-logo-sekolah" accept="image/*" onchange="uploadImage(this, 'out-logo-sekolah')"></div>
+                        <div class="form-group"><label>Nama Siswa</label><input type="text" id="in-nama" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>NIS/NISN</label><input type="text" id="in-nis" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Kelas</label><input type="text" id="in-kelas" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Kompetensi Keahlian/Jurusan</label><input type="text" id="in-jurusan" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Nama Sekolah</label><input type="text" id="in-sekolah" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Alamat Sekolah</label><input type="text" id="in-alamat-sekolah" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Tahun Ajaran</label><input type="text" id="in-tahun" oninput="updateDoc()"></div>
                     </div>
                 </div>
 
-                <!-- 2. PENGESAHAN -->
+                <!-- 2. DATA TEMPAT PKL -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        Lembar Pengesahan <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Data Tempat PKL <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Nama Pembimbing Sekolah</label>
-                            <input type="text" id="in-pem-sekolah" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>NIP Pembimbing Sekolah</label>
-                            <input type="text" id="in-nip-sekolah" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Pembimbing Industri</label>
-                            <input type="text" id="in-pem-industri" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Jabatan Pembimbing Industri</label>
-                            <input type="text" id="in-jabatan-industri" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>Kepala Sekolah (Tanda Tangan)</label>
-                            <input type="text" id="in-kepsek" oninput="updateDoc()">
-                        </div>
+                        <div class="form-group"><label>Nama Perusahaan/Instansi</label><input type="text" id="in-perusahaan" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Logo Perusahaan</label><input type="file" id="in-logo-perusahaan" accept="image/*" onchange="uploadImage(this, 'out-logo-perusahaan')"></div>
+                        <div class="form-group"><label>Alamat Tempat PKL</label><input type="text" id="in-alamat-pkl" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Bidang Usaha</label><input type="text" id="in-bidang" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Nama Pembimbing Lapangan</label><input type="text" id="in-pem-lapangan" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Jabatan Pembimbing</label><input type="text" id="in-jabatan-pem" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Lama PKL</label><input type="text" id="in-lama-pkl" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Tanggal Mulai</label><input type="text" id="in-tgl-mulai" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Tanggal Selesai</label><input type="text" id="in-tgl-selesai" oninput="updateDoc()"></div>
                     </div>
                 </div>
 
-                <!-- 3. KATA PENGANTAR -->
+                <!-- 3. TOPIK & LEMBAR PENGESAHAN -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        Kata Pengantar <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Pengesahan & Topik <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Isi Kata Pengantar</label>
-                            <textarea id="in-pengantar" oninput="updateDoc()"></textarea>
-                            <div class="helper">Tekan Enter untuk paragraf baru.</div>
-                        </div>
-                        <div class="form-group">
-                            <label>Kota & Tanggal</label>
-                            <input type="text" id="in-tempat-tgl" oninput="updateDoc()">
-                        </div>
+                        <div class="form-group"><label>Fokus Pekerjaan Utama (Topik)</label><input type="text" id="in-topik" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Software/Alat yang digunakan</label><input type="text" id="in-tools" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Divisi Penempatan</label><input type="text" id="in-divisi" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Hasil/Proyek</label><input type="text" id="in-hasil" oninput="updateDoc()"></div>
+                        <hr style="margin: 10px 0; border:0; border-top:1px solid #eee;">
+                        <p class="helper" style="font-weight:bold;">Data Pengesahan Sekolah</p>
+                        <div class="form-group"><label>Pembimbing Sekolah</label><input type="text" id="in-pem-sekolah" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Kepala Program</label><input type="text" id="in-kaprog" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Kepala Sekolah</label><input type="text" id="in-kepsek" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>NIP Kepala Sekolah</label><input type="text" id="in-nip-kepsek" oninput="updateDoc()"></div>
+                        <hr style="margin: 10px 0; border:0; border-top:1px solid #eee;">
+                        <p class="helper" style="font-weight:bold;">Data Pengesahan Perusahaan</p>
+                        <div class="form-group"><label>Pimpinan/HRD Perusahaan</label><input type="text" id="in-pimpinan" oninput="updateDoc()"></div>
                     </div>
                 </div>
 
-                <!-- 4. DAFTAR ISI (PENGGATURAN HALAMAN) -->
+                <!-- 4. MOTTO & KATA PENGANTAR -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        Pengaturan Daftar Isi <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Pendahuluan Laporan <span>▼</span></div>
                     <div class="accordion-body">
-                        <p class="helper" style="margin-bottom: 10px;">Sesuaikan halaman jika layout berubah saat print.</p>
-                        <div class="form-group">
-                            <label>Hlm Pengesahan</label>
-                            <input type="text" id="in-hal-pengesahan" value="i" oninput="renderTOC()">
-                        </div>
-                        <div class="form-group">
-                            <label>Hlm Kata Pengantar</label>
-                            <input type="text" id="in-hal-pengantar" value="ii" oninput="renderTOC()">
-                        </div>
-                        <div class="form-group">
-                            <label>Hlm Daftar Isi</label>
-                            <input type="text" id="in-hal-isi" value="iii" oninput="renderTOC()">
-                        </div>
+                        <div class="form-group"><label>Motto (Opsional)</label><input type="text" id="in-motto" placeholder="Pantang menanti surrender..." oninput="updateDoc()"></div>
+                        <div class="form-group"><label>Kata Pengantar</label><textarea id="in-pengantar" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>Kota & Tanggal</label><input type="text" id="in-tempat-tgl" oninput="updateDoc()"></div>
                     </div>
                 </div>
 
-                <!-- 5. BAB I -->
+                <!-- 5. DAFTAR ISI -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        BAB I <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Daftar Isi & Gambar <span>▼</span></div>
                     <div class="accordion-body">
-                        <!-- Input Judul Bab -->
-                        <div class="form-group">
-                            <label>Judul Bab (Otomatis Masuk Daftar Isi)</label>
-                            <input type="text" class="chapter-title-input" id="in-title-bab1" value="BAB I PENDAHULUAN" oninput="updateDoc()">
+                        <div class="form-group"><label>Ketentuan Halaman</label>
+                            <p class="helper">Halaman di bawah ini untuk menyesuaikan nomor halaman di Daftar Isi (Manual).</p>
+                            <input type="text" id="in-hal-motto" value="iii" placeholder="Motto" oninput="renderTOC()">
+                            <input type="text" id="in-hal-pengantar" value="iv" placeholder="Pengantar" oninput="renderTOC()">
+                            <input type="text" id="in-hal-isi" value="v" placeholder="Daftar Isi" oninput="renderTOC()">
                         </div>
-                        <div class="form-group">
-                            <label>1.1 Latar Belakang</label>
-                            <textarea id="in-bab1-latbel" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>1.2 Tujuan PKL</label>
-                            <textarea id="in-bab1-tujuan" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>1.3 Manfaat PKL</label>
-                            <textarea id="in-bab1-manfaat" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>1.4 Waktu & Tempat</label>
-                            <textarea id="in-bab1-waktu" oninput="updateDoc()"></textarea>
-                        </div>
+                        <hr style="margin: 10px 0;">
+                        <div class="form-group"><label>Judul Daftar Gambar</label><input type="text" class="chapter-title-input" value="DAFTAR GAMBAR" oninput="updateDoc()"></div>
+                        <!-- Input Manual Daftar Gambar -->
+                        <div id="daftar-gambar-inputs"></div>
+                        <button class="btn-small" onclick="addDaftarGambar()">+ Tambah Gambar</button>
                     </div>
                 </div>
 
-                <!-- 6. BAB II -->
+                <!-- 6. BAB I -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        BAB II <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">BAB I Pendahuluan <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Judul Bab</label>
-                            <input type="text" class="chapter-title-input" id="in-title-bab2" value="BAB II PROFIL PERUSAHAAN" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>2.1 Sejarah Singkat</label>
-                            <textarea id="in-bab2-sejarah" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>2.2 Visi & Misi</label>
-                            <textarea id="in-bab2-visi" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>2.3 Struktur Organisasi</label>
-                            <textarea id="in-bab2-struktur" oninput="updateDoc()"></textarea>
-                        </div>
+                        <div class="form-group"><label>Judul Bab</label><input type="text" class="chapter-title-input" id="in-title-bab1" value="BAB I PENDAHULUAN" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>1.1 Latar Belakang</label><textarea id="in-bab1-latbel" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>1.2 Tujuan PKL</label><textarea id="in-bab1-tujuan" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>1.3 Manfaat PKL</label><textarea id="in-bab1-manfaat" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>1.4 Waktu dan Tempat PKL</label><textarea id="in-bab1-waktu" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>1.5 Metode Pengumpulan Data</label><textarea id="in-bab1-metode" oninput="updateDoc()"></textarea></div>
                     </div>
                 </div>
 
-                <!-- 7. BAB III -->
+                <!-- 7. BAB II -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        BAB III <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">BAB II Perusahaan <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Judul Bab</label>
-                            <input type="text" class="chapter-title-input" id="in-title-bab3" value="BAB III PELAKSANAAN PKL" oninput="updateDoc()">
-                        </div>
-                        <div class="form-group">
-                            <label>3.1 Deskripsi Pekerjaan</label>
-                            <textarea id="in-bab3-deskripsi" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>3.2 Prosedur Kerja</label>
-                            <textarea id="in-bab3-prosedur" oninput="updateDoc()"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>3.3 Hasil Kerja</label>
-                            <textarea id="in-bab3-hasil" oninput="updateDoc()"></textarea>
+                        <div class="form-group"><label>Judul Bab</label><input type="text" class="chapter-title-input" id="in-title-bab2" value="BAB II GAMBARAN UMUM PERUSAHAAN" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>2.1 Sejarah Perusahaan</label><textarea id="in-bab2-sejarah" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>2.2 Struktur Organisasi</label><textarea id="in-bab2-struktur" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>2.3 Visi dan Misi</label><textarea id="in-bab2-visi" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>2.4 Bidang Usaha</label><textarea id="in-bab2-bidang" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>2.5 Tata Tertib Perusahaan</label><textarea id="in-bab2-tatatertib" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group" style="background:#f0f9ff; padding:10px; border:1px solid #bae6fd; border-radius:5px;">
+                            <label><b>Upload Gambar Struktur (Opsional)</b></label>
+                            <input type="file" id="in-img-struktur" accept="image/*" onchange="uploadImage(this, 'out-img-struktur')">
                         </div>
                     </div>
                 </div>
 
-                <!-- 8. BAB IV -->
+                <!-- 8. BAB III -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        BAB IV <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">BAB III Pelaksanaan <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Judul Bab</label>
-                            <input type="text" class="chapter-title-input" id="in-title-bab4" value="BAB IV PENUTUP" oninput="updateDoc()">
+                        <div class="form-group"><label>Judul Bab</label><input type="text" class="chapter-title-input" id="in-title-bab3" value="BAB III PELAKSANAAN PKL" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>3.1 Kegiatan Selama PKL</label><textarea id="in-bab3-kegiatan" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>3.2 Proses Pelaksanaan Kerja</label><textarea id="in-bab3-proses" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>3.3 Kendala yang Dihadapi</label><textarea id="in-bab3-kendala" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>3.4 Solusi atas Kendala</label><textarea id="in-bab3-solusi" oninput="updateDoc()"></textarea></div>
+                        
+                        <!-- TABEL JURNAL -->
+                        <div class="form-group" style="background:#f0fdf4; padding:10px; border:1px solid #bbf7d0; border-radius:5px;">
+                            <label><b>3.5 Tabel Jurnal Kegiatan Harian</b></label>
+                            <div id="journal-rows-container"></div>
+                            <button class="btn-small" onclick="addJournalRow()" style="width:100%; margin-top:5px;">+ Tambah Baris</button>
                         </div>
-                        <div class="form-group">
-                            <label>4.1 Kesimpulan</label>
-                            <textarea id="in-bab4-kesimpulan" oninput="updateDoc()"></textarea>
+
+                        <!-- DOKUMENTASI -->
+                        <div class="form-group" style="background:#fff7ed; padding:10px; border:1px solid #fed7aa; border-radius:5px; margin-top:10px;">
+                            <label><b>3.6 Dokumentasi Foto Kegiatan</b></label>
+                            <input type="file" id="in-img-dokumentasi" accept="image/*" onchange="uploadImage(this, 'out-img-dokumentasi')">
+                            <div class="form-group" style="margin-top:10px; margin-bottom:0;">
+                                <label>Keterangan Gambar (Untuk Caption)</label>
+                                <input type="text" id="in-caption-dokumentasi" placeholder="Gambar 1. Kegiatan perakitan..." oninput="updateDoc()">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>4.2 Saran</label>
-                            <textarea id="in-bab4-saran" oninput="updateDoc()"></textarea>
-                        </div>
+                        <div class="form-group"><label>3.7 Hasil yang Dicapai</label><textarea id="in-bab3-hasil" oninput="updateDoc()"></textarea></div>
                     </div>
                 </div>
 
-                <!-- 9. PUSTAKA -->
+                <!-- 9. BAB IV -->
                 <div class="accordion-item">
-                    <div class="accordion-header" onclick="toggleAccordion(this)">
-                        Daftar Pustaka <span>▼</span>
-                    </div>
+                    <div class="accordion-header" onclick="toggleAccordion(this)">BAB IV Penutup <span>▼</span></div>
                     <div class="accordion-body">
-                        <div class="form-group">
-                            <label>Isi Daftar Pustaka</label>
-                            <textarea id="in-pustaka" oninput="updateDoc()"></textarea>
-                        </div>
+                        <div class="form-group"><label>Judul Bab</label><input type="text" class="chapter-title-input" id="in-title-bab4" value="BAB IV PENUTUP" oninput="updateDoc()"></div>
+                        <div class="form-group"><label>4.1 Kesimpulan</label><textarea id="in-bab4-kesimpulan" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>4.2 Saran</label><textarea id="in-bab4-saran" oninput="updateDoc()"></textarea></div>
                     </div>
                 </div>
 
+                <!-- 10. PUSTAKA & LAMPIRAN -->
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)">Pustaka & Lampiran <span>▼</span></div>
+                    <div class="accordion-body">
+                        <div class="form-group"><label>Daftar Pustaka</label><textarea id="in-pustaka" oninput="updateDoc()"></textarea></div>
+                        <div class="form-group"><label>Daftar Lampiran (Isi List)</label><textarea id="in-lampiran" placeholder="1. Surat Tugas&#10;2. Surat Balasan..." oninput="updateDoc()"></textarea></div>
+                    </div>
+                </div>
             </div>
         </aside>
 
         <!-- PREVIEW AREA -->
         <main class="preview-area">
-            
             <div id="doc-wrapper">
                 
-                <!-- HALAMAN COVER (TANPA NOMOR) -->
+                <!-- 1. COVER (NO NUMBER) -->
                 <div class="document-page doc-center">
-                    <img src="https://via.placeholder.com/100x100.png?text=LOGO" alt="Logo" style="width: 100px; margin-bottom: 20px;">
-                    <p class="doc-bold doc-ucase" style="font-size: 14pt; margin-bottom: 10pt;">LAPORAN PELAKSANAAN</p>
-                    <p class="doc-bold doc-ucase" style="font-size: 14pt; margin-bottom: 40pt;">PRAKTIK KERJA LAPANGAN</p>
+                    <img id="out-logo-sekolah" src="https://via.placeholder.com/100x100.png?text=LOGO" class="doc-img" style="width: 100px; margin-bottom: 20px;">
+                    <h2 class="doc-title-main doc-ucase" style="margin-bottom: 10pt;">LAPORAN PELAKSANAAN</h2>
+                    <h2 class="doc-title-main doc-ucase" style="margin-bottom: 10pt;">PRAKTIK KERJA LAPANGAN (PKL)</h2>
                     
-                    <p class="doc-bold doc-ucase" style="font-size: 14pt; margin-bottom: 30pt;" id="out-judul">JUDUL LAPORAN</p>
+                    <h2 class="doc-title-main doc-ucase" style="margin-bottom: 40pt;" id="out-topik-cover">TOPIK KEGIATAN PKL</h2>
                     
                     <div style="text-align: left; display: inline-block; margin-bottom: 30pt;">
                         <p class="doc-no-indent">Disusun Oleh:</p>
-                        <table style="border: none;">
-                            <tr><td style="padding: 2px 20px 2px 0;">Nama</td><td>: <span id="out-nama">Nama Siswa</span></td></tr>
-                            <tr><td style="padding: 2px 20px 2px 0;">NIS/NIM</td><td>: <span id="out-nis">123456</span></td></tr>
-                            <tr><td style="padding: 2px 20px 2px 0;">Jurusan</td><td>: <span id="out-jurusan">Jurusan</span></td></tr>
+                        <table style="border:none;">
+                            <tr><td style="padding:2px 20px 2px 0;">Nama Siswa</td><td>: <span id="out-nama-cover"></span></td></tr>
+                            <tr><td style="padding:2px 20px 2px 0;">NIS / NISN</td><td>: <span id="out-nis-cover"></span></td></tr>
+                            <tr><td style="padding:2px 20px 2px 0;">Kelas</td><td>: <span id="out-kelas-cover"></span></td></tr>
+                            <tr><td style="padding:2px 20px 2px 0;">Jurusan</td><td>: <span id="out-jurusan-cover"></span></td></tr>
                         </table>
                     </div>
-
-                    <br><br>
-                    <p class="doc-bold doc-ucase" id="out-sekolah">SEKOLAH KAMPUS</p>
-                    <p class="doc-bold" id="out-tahun">TAHUN 2024</p>
+                    <br><br><br><br>
+                    <p class="doc-bold doc-ucase" id="out-sekolah-cover" style="font-size: 14pt;">NAMA SEKOLAH</p>
+                    <p class="doc-bold" id="out-tahun-cover" style="font-size: 14pt;">TAHUN AJARAN</p>
                 </div>
 
-                <!-- HALAMAN PENGESAHAN (ROMAWI i) -->
+                <!-- 2. LEMBAR PENGESAHAN SEKOLAH (i) -->
                 <div class="document-page page-front-matter">
                     <h1 class="doc-title-main doc-center doc-ucase">LEMBAR PENGESAHAN</h1>
-                    <p class="doc-center doc-no-indent">Laporan Praktik Kerja Lapangan ini telah diperiksa dan disahkan oleh:</p>
-                    <br>
+                    <p class="doc-center doc-no-indent" style="margin-bottom: 20pt;">Laporan Praktik Kerja Lapangan ini telah diperiksa dan disahkan oleh:</p>
                     <table class="doc-table">
-                        <tr><td style="width: 160px;">Penyusun</td><td>: <span id="out-nama-pengesahan">Nama Siswa</span></td></tr>
-                        <tr><td>NIS / NIM</td><td>: <span id="out-nis-pengesahan">123456</span></td></tr>
-                        <tr><td>Judul Laporan</td><td>: <span id="out-judul-pengesahan">Judul</span></td></tr>
-                        <tr><td>Tempat PKL</td><td>: <span id="out-perusahaan-pengesahan">PT.</span></td></tr>
+                        <tr><td style="width: 160px;">Judul Laporan</td><td>: <span id="out-topik-pengesahan"></span></td></tr>
+                        <tr><td>Nama Siswa</td><td>: <span id="out-nama-pengesahan"></span></td></tr>
+                        <tr><td>NIS / NISN</td><td>: <span id="out-nis-pengesahan"></span></td></tr>
+                        <tr><td>Jurusan</td><td>: <span id="out-jurusan-pengesahan"></span></td></tr>
+                        <tr><td>Nama Sekolah</td><td>: <span id="out-sekolah-pengesahan"></span></td></tr>
                     </table>
-                    <br>
-                    <p class="doc-no-indent">Telah disahkan pada hari .................... tanggal ....................</p>
-                    <br><br><br>
-                    
-                    <div class="doc-table" style="border:none;">
-                        <div style="display:flex; justify-content:space-between;">
-                            <div style="text-align: center;">
-                                <p>Pembimbing Sekolah</p>
-                                <br><br><br>
-                                <p class="doc-bold" id="out-pem-sekolah">Nama Guru</p>
-                                <p style="font-size: 10pt;">NIP. <span id="out-nip-sekolah">...</span></p>
-                            </div>
-                            <div style="text-align: center;">
-                                <p>Pembimbing Industri</p>
-                                <br><br><br>
-                                <p class="doc-bold" id="out-pem-industri">Nama Mentor</p>
-                                <p style="font-size: 10pt;" id="out-jabatan-industri">Jabatan</p>
-                            </div>
+                    <br><br>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div style="text-align:center;">
+                            <p>Pembimbing PKL</p><br><br><br>
+                            <p class="doc-bold" id="out-pem-sekolah"></p>
+                        </div>
+                        <div style="text-align:center;">
+                            <p>Kepala Program</p><br><br><br>
+                            <p class="doc-bold" id="out-kaprog"></p>
                         </div>
                     </div>
-                    <br>
+                    <br><br>
                     <div class="doc-center">
-                        <p>Mengetahui,<br>Kepala Sekolah</p>
-                        <br><br><br>
-                        <p class="doc-bold" id="out-kepsek">Nama Kepsek</p>
+                        <p>Mengetahui,<br>Kepala Sekolah</p><br><br><br>
+                        <p class="doc-bold" id="out-kepsek"></p>
+                        <p style="font-size:10pt;">NIP. <span id="out-nip-kepsek"></span></p>
                     </div>
                 </div>
 
-                <!-- HALAMAN KATA PENGANTAR (ROMAWI ii) -->
+                <!-- 3. LEMBAR PENGESAHAN PERUSAHAAN (ii) -->
+                <div class="document-page page-front-matter">
+                    <h1 class="doc-title-main doc-center doc-ucase">LEMBAR PENGESAHAN</h1>
+                    <p class="doc-center doc-no-indent" style="margin-bottom: 20pt;">Laporan Praktik Kerja Lapangan ini telah diperiksa dan disahkan oleh:</p>
+                    <table class="doc-table">
+                        <tr><td>Nama Perusahaan</td><td>: <span id="out-perusahaan-pengesahan"></span></td></tr>
+                        <tr><td>Nama Siswa PKL</td><td>: <span id="out-nama-perusahaan"></span></td></tr>
+                        <tr><td>Divisi Penempatan</td><td>: <span id="out-divisi-perusahaan"></span></td></tr>
+                        <tr><td>Lama PKL</td><td>: <span id="out-lama-perusahaan"></span></td></tr>
+                    </table>
+                    <p class="doc-no-indent" style="margin-top: 20pt;">Menyatakan bahwa siswa tersebut di atas telah melaksanakan kegiatan Praktik Kerja Lapangan dengan baik dan benar.</p>
+                    <br><br><br>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div style="text-align:center;">
+                            <p>Pembimbing Lapangan</p><br><br><br>
+                            <p class="doc-bold" id="out-pem-lapangan-pengesahan"></p>
+                            <p style="font-size:10pt;" id="out-jabatan-perusahaan"></p>
+                        </div>
+                        <div style="text-align:center;">
+                            <p>Pimpinan / HRD</p><br><br><br>
+                            <p class="doc-bold" id="out-pimpinan-pengesahan"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. MOTTO (iii) -->
+                <div class="document-page page-front-matter">
+                    <h1 class="doc-title-main doc-center doc-ucase" style="font-style: italic;">MOTTO</h1>
+                    <p class="doc-center doc-bold doc-italic" style="font-size: 14pt; margin-top: 50pt;" id="out-motto">"ISILAH MOTTO DISINI"</p>
+                </div>
+
+                <!-- 5. KATA PENGANTAR (iv) -->
                 <div class="document-page page-front-matter">
                     <h1 class="doc-title-main doc-center doc-ucase">KATA PENGANTAR</h1>
                     <div id="out-pengantar"></div>
                     <br><br>
                     <div class="doc-center">
-                        <p id="out-tempat-tgl">Kota, Tanggal</p>
-                        <br><br><br>
-                        <p class="doc-bold" id="out-nama-ttd">Nama Siswa</p>
+                        <p id="out-tempat-tgl"></p><br><br><br>
+                        <p class="doc-bold" id="out-nama-ttd"></p>
                     </div>
                 </div>
 
-                <!-- HALAMAN DAFTAR ISI (ROMAWI iii) -->
+                <!-- 6. DAFTAR ISI (v) -->
                 <div class="document-page page-front-matter">
                     <h1 class="doc-title-main doc-center doc-ucase">DAFTAR ISI</h1>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;"><span>Cover</span> <span></span></div>
+                    <div class="toc-row"><span class="toc-text">Lembar Pengesahan Sekolah</span><span class="toc-dots"></span><span class="toc-page">i</span></div>
+                    <div class="toc-row"><span class="toc-text">Lembar Pengesahan Perusahaan</span><span class="toc-dots"></span><span class="toc-page">ii</span></div>
+                    <div class="toc-row"><span class="toc-text">Motto</span><span class="toc-dots"></span><span class="toc-page" id="out-hal-toc-motto">iii</span></div>
+                    <div class="toc-row"><span class="toc-text">Kata Pengantar</span><span class="toc-dots"></span><span class="toc-page" id="out-hal-toc-pengantar">iv</span></div>
+                    <div class="toc-row"><span class="toc-text">Daftar Isi</span><span class="toc-dots"></span><span class="toc-page" id="out-hal-toc-isi">v</span></div>
                     
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span>HALAMAN JUDUL</span> <span></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span>LEMBAR PENGESAHAN</span> <span class="toc-page-num" id="out-toc-pengesahan">i</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span>KATA PENGANTAR</span> <span class="toc-page-num" id="out-toc-pengantar">ii</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span>DAFTAR ISI</span> <span class="toc-page-num" id="out-toc-isi">iii</span>
-                    </div>
-                    
-                    <!-- Container untuk TOC Otomatis -->
-                    <div id="toc-container">
-                        <!-- JavaScript akan mengisi ini -->
-                    </div>
+                    <!-- Daftar Gambar Container -->
+                    <div id="toc-daftar-gambar-container" style="margin-top:10px;"></div>
+
+                    <br>
+                    <div id="toc-container"></div>
                 </div>
 
-                <!-- HALAMAN BAB I (MULAI ANGKA 1) -->
+                <!-- 7. BAB I (1) -->
                 <div class="document-page page-content restart-number">
                     <h1 class="doc-chapter-title" id="out-header-bab1">BAB I PENDAHULUAN</h1>
                     <div class="doc-sub-chapter">1.1 Latar Belakang</div>
@@ -621,33 +539,57 @@
                     <div id="out-bab1-tujuan" class="doc-indent"></div>
                     <div class="doc-sub-chapter">1.3 Manfaat PKL</div>
                     <div id="out-bab1-manfaat" class="doc-indent"></div>
-                    <div class="doc-sub-chapter">1.4 Waktu dan Tempat</div>
+                    <div class="doc-sub-chapter">1.4 Waktu dan Tempat PKL</div>
                     <div id="out-bab1-waktu" class="doc-indent"></div>
+                    <div class="doc-sub-chapter">1.5 Metode Pengumpulan Data</div>
+                    <div id="out-bab1-metode" class="doc-indent"></div>
                 </div>
 
-                <!-- HALAMAN BAB II (ANGKA 2) -->
+                <!-- 8. BAB II -->
                 <div class="document-page page-content">
-                    <h1 class="doc-chapter-title" id="out-header-bab2">BAB II PROFIL PERUSAHAAN</h1>
-                    <div class="doc-sub-chapter">2.1 Sejarah Singkat</div>
+                    <h1 class="doc-chapter-title" id="out-header-bab2">BAB II GAMBARAN UMUM PERUSAHAAN</h1>
+                    <div class="doc-sub-chapter">2.1 Sejarah Perusahaan</div>
                     <div id="out-bab2-sejarah" class="doc-indent"></div>
-                    <div class="doc-sub-chapter">2.2 Visi dan Misi</div>
-                    <div id="out-bab2-visi" class="doc-indent"></div>
-                    <div class="doc-sub-chapter">2.3 Struktur Organisasi</div>
+                    <div class="doc-sub-chapter">2.2 Struktur Organisasi</div>
                     <div id="out-bab2-struktur" class="doc-indent"></div>
+                    <img id="out-img-struktur" class="doc-img" style="display:none;">
+                    <div class="doc-sub-chapter">2.3 Visi dan Misi</div>
+                    <div id="out-bab2-visi" class="doc-indent"></div>
+                    <div class="doc-sub-chapter">2.4 Bidang Usaha</div>
+                    <div id="out-bab2-bidang" class="doc-indent"></div>
+                    <div class="doc-sub-chapter">2.5 Tata Tertib Perusahaan</div>
+                    <div id="out-bab2-tatatertib" class="doc-indent"></div>
                 </div>
 
-                <!-- HALAMAN BAB III (ANGKA 3) -->
+                <!-- 9. BAB III -->
                 <div class="document-page page-content">
                     <h1 class="doc-chapter-title" id="out-header-bab3">BAB III PELAKSANAAN PKL</h1>
-                    <div class="doc-sub-chapter">3.1 Deskripsi Pekerjaan</div>
-                    <div id="out-bab3-deskripsi" class="doc-indent"></div>
-                    <div class="doc-sub-chapter">3.2 Prosedur Kerja</div>
-                    <div id="out-bab3-prosedur" class="doc-indent"></div>
-                    <div class="doc-sub-chapter">3.3 Hasil Kerja</div>
+                    <div class="doc-sub-chapter">3.1 Kegiatan Selama PKL</div>
+                    <div id="out-bab3-kegiatan" class="doc-indent"></div>
+                    <div class="doc-sub-chapter">3.2 Proses Pelaksanaan Kerja</div>
+                    <div id="out-bab3-proses" class="doc-indent"></div>
+                    <div class="doc-sub-chapter">3.3 Kendala yang Dihadapi</div>
+                    <div id="out-bab3-kendala" class="doc-indent"></div>
+                    <div class="doc-sub-chapter">3.4 Solusi atas Kendala</div>
+                    <div id="out-bab3-solusi" class="doc-indent"></div>
+                    
+                    <div class="doc-sub-chapter">3.5 Tabel Jurnal Kegiatan Harian</div>
+                    <table class="doc-table" id="out-journal-table">
+                        <thead>
+                            <tr><th style="text-align:center;">Hari/Tanggal</th><th style="text-align:center;">Kegiatan</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <div class="doc-sub-chapter">3.6 Dokumentasi Kegiatan</div>
+                    <img id="out-img-dokumentasi" src="" class="doc-img" style="display:none;">
+                    <p class="doc-center doc-bold" id="out-caption-dokumentasi" style="margin-bottom:12pt;"></p>
+
+                    <div class="doc-sub-chapter">3.7 Hasil yang Dicapai</div>
                     <div id="out-bab3-hasil" class="doc-indent"></div>
                 </div>
 
-                <!-- HALAMAN BAB IV (ANGKA 4) -->
+                <!-- 10. BAB IV -->
                 <div class="document-page page-content">
                     <h1 class="doc-chapter-title" id="out-header-bab4">BAB IV PENUTUP</h1>
                     <div class="doc-sub-chapter">4.1 Kesimpulan</div>
@@ -656,66 +598,142 @@
                     <div id="out-bab4-saran" class="doc-indent"></div>
                 </div>
 
-                <!-- HALAMAN PUSTAKA (ANGKA 5) -->
+                <!-- 11. DAFTAR PUSTAKA -->
                 <div class="document-page page-content">
                     <h1 class="doc-chapter-title">DAFTAR PUSTAKA</h1>
                     <div id="out-pustaka" class="doc-no-indent" style="white-space: pre-line;"></div>
+                </div>
+
+                <!-- 12. LAMPIRAN -->
+                <div class="document-page page-content">
+                    <h1 class="doc-chapter-title">LAMPIRAN</h1>
+                    <div id="out-lampiran" class="doc-no-indent" style="white-space: pre-line;"></div>
                 </div>
 
             </div>
         </main>
     </div>
 
-    <!-- TOMBOL PRINT FLOATING -->
+    <!-- TOMBOL PRINT -->
     <button class="btn-print-float" onclick="window.print()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
         Download PDF
     </button>
 
     <script>
-        // --- 1. AUTO SAVE & LOAD (LOCAL STORAGE) ---
-        const inputs = document.querySelectorAll('input, textarea');
-        const defaultData = {
-            'in-judul': 'PELAKSANAAN PRAKTIK KERJA LAPANGAN',
-            'in-nama': 'Nama Lengkap Siswa',
-            'in-nis': '12345678',
-            'in-jurusan': 'Teknik Komputer dan Jaringan',
-            'in-sekolah': 'SMK NEGERI 1 CONTOH',
-            'in-perusahaan': 'PT. TEKNOLOGI MAJU',
-            'in-tahun': '2023/2024',
-            'in-tempat-tgl': 'Jakarta, Agustus 2024',
-            'in-hal-pengesahan': 'i',
-            'in-hal-pengantar': 'ii',
-            'in-hal-isi': 'iii'
-        };
-
+        // --- 1. DEFAULT & LOAD ---
+        const defaultData = {}; // Semua kosong sesuai request
         window.onload = function() {
-            inputs.forEach(input => {
-                const savedValue = localStorage.getItem(input.id);
-                if (savedValue) {
-                    input.value = savedValue;
-                } else if (defaultData[input.id]) {
-                    input.value = defaultData[input.id];
-                }
+            document.querySelectorAll('input, textarea').forEach(input => {
+                if(input.type === 'file') return;
+                const val = localStorage.getItem(input.id);
+                if(val) input.value = val;
+                else if(defaultData[input.id]) input.value = defaultData[input.id];
             });
-            updateDoc(); // First load
-            renderTOC(); // Render TOC
+
+            loadImageFromStorage('out-logo-sekolah');
+            loadImageFromStorage('out-logo-perusahaan');
+            loadImageFromStorage('out-img-struktur');
+            loadImageFromStorage('out-img-dokumentasi');
+            loadJournalRows();
+            addDaftarGambar(); // Add 1 row default for Daftar Gambar
+            loadDaftarGambarRows();
+
+            updateDoc();
+            renderTOC();
         };
 
-        inputs.forEach(input => {
-            input.addEventListener('input', () => {
-                localStorage.setItem(input.id, input.value);
-            });
-        });
-
-        function resetData() {
-            if(confirm("Apakah Anda yakin ingin mereset semua data tulisan?")) {
-                localStorage.clear();
-                location.reload();
+        // --- 2. IMAGE HANDLING ---
+        function uploadImage(input, outputId) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById(outputId);
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                    try { localStorage.setItem(outputId, e.target.result); } catch(e) { alert("Gambar kebesaran."); }
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        function loadImageFromStorage(imgId) {
+            const savedSrc = localStorage.getItem(imgId);
+            if (savedSrc) {
+                const img = document.getElementById(imgId);
+                img.src = savedSrc;
+                img.style.display = 'block';
             }
         }
 
-        // --- 2. ACCORDION LOGIC ---
+        // --- 3. JOURNAL TABLE ---
+        function addJournalRow(data = {date: '', activity: ''}) {
+            const container = document.getElementById('journal-rows-container');
+            const div = document.createElement('div');
+            div.className = 'table-builder-row';
+            div.innerHTML = `
+                <input type="text" class="journal-date" placeholder="Hari/Tgl" value="${data.date}" oninput="updateJournalTable()">
+                <input type="text" class="journal-activity" placeholder="Kegiatan" value="${data.activity}" oninput="updateJournalTable()">
+                <button class="btn-small btn-danger" onclick="removeRow(this)">X</button>
+            `;
+            container.appendChild(div);
+            updateJournalTable();
+        }
+        function removeRow(btn) { btn.parentElement.remove(); updateJournalTable(); }
+        function updateJournalTable() {
+            const tbody = document.querySelector('#out-journal-table tbody');
+            tbody.innerHTML = '';
+            document.querySelectorAll('.table-builder-row').forEach(row => {
+                const date = row.querySelector('.journal-date').value;
+                const activity = row.querySelector('.journal-activity').value;
+                if(date || activity) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${date}</td><td>${activity}</td>`;
+                    tbody.appendChild(tr);
+                }
+            });
+            const rowsData = [];
+            document.querySelectorAll('.table-builder-row').forEach(row => {
+                rowsData.push({
+                    date: row.querySelector('.journal-date').value,
+                    activity: row.querySelector('.journal-activity').value
+                });
+            });
+            localStorage.setItem('journal-rows', JSON.stringify(rowsData));
+        }
+        function loadJournalRows() {
+            const saved = localStorage.getItem('journal-rows');
+            if(saved) {
+                const rows = JSON.parse(saved);
+                if(rows.length > 0) { document.getElementById('journal-rows-container').innerHTML = ''; rows.forEach(r => addJournalRow(r)); }
+                else addJournalRow();
+            } else { addJournalRow(); }
+        }
+
+        // --- 4. DAFTAR GAMBAR INPUT ---
+        function addDaftarGambar(data = {caption: '', page: ''}) {
+            const container = document.getElementById('daftar-gambar-inputs');
+            const div = document.createElement('div');
+            div.className = 'table-builder-row';
+            div.innerHTML = `
+                <input type="text" class="dg-caption" placeholder="Keterangan Gambar" value="${data.caption}" oninput="updateTOC()">
+                <input type="text" class="dg-page" placeholder="Hal" value="${data.page}" oninput="updateTOC()">
+                <button class="btn-small btn-danger" onclick="this.parentElement.remove(); updateTOC()">X</button>
+            `;
+            container.appendChild(div);
+        }
+        function loadDaftarGambarRows() {
+            const saved = localStorage.getItem('daftar-gambar-rows');
+            if(saved) {
+                const rows = JSON.parse(saved);
+                if(rows.length > 0) { document.getElementById('daftar-gambar-inputs').innerHTML = ''; rows.forEach(r => addDaftarGambar(r)); }
+            }
+        }
+
+        // --- 5. GENERAL UPDATE ---
+        document.querySelectorAll('input, textarea').forEach(input => {
+            input.addEventListener('input', () => { localStorage.setItem(input.id, input.value); });
+        });
+        function resetData() { if(confirm("Reset semua data?")) { localStorage.clear(); location.reload(); } }
         function toggleAccordion(header) {
             const item = header.parentElement;
             const isActive = item.classList.contains('active');
@@ -723,148 +741,114 @@
             if (!isActive) item.classList.add('active');
         }
 
-        // --- 3. RENDER TOC OTOMATIS ---
         function renderTOC() {
-            const container = document.getElementById('toc-container');
-            container.innerHTML = ''; // Clear existing
-
-            // Konfigurasi Daftar Isi
-            const chapters = [
-                {
-                    id: 'bab1',
-                    titleInput: 'in-title-bab1',
-                    subItems: [
-                        { label: '1.1 Latar Belakang', page: '1' },
-                        { label: '1.2 Tujuan PKL', page: '2' },
-                        { label: '1.3 Manfaat PKL', page: '3' },
-                        { label: '1.4 Waktu dan Tempat', page: '4' }
-                    ]
-                },
-                {
-                    id: 'bab2',
-                    titleInput: 'in-title-bab2',
-                    subItems: [
-                        { label: '2.1 Sejarah Singkat', page: '5' },
-                        { label: '2.2 Visi dan Misi', page: '6' },
-                        { label: '2.3 Struktur Organisasi', page: '7' }
-                    ]
-                },
-                {
-                    id: 'bab3',
-                    titleInput: 'in-title-bab3',
-                    subItems: [
-                        { label: '3.1 Deskripsi Pekerjaan', page: '8' },
-                        { label: '3.2 Prosedur Kerja', page: '9' },
-                        { label: '3.3 Hasil Kerja', page: '10' }
-                    ]
-                },
-                {
-                    id: 'bab4',
-                    titleInput: 'in-title-bab4',
-                    subItems: [
-                        { label: '4.1 Kesimpulan', page: '11' },
-                        { label: '4.2 Saran', page: '12' }
-                    ]
+            // Render Manual Daftar Gambar Inputs
+            const dgContainer = document.getElementById('toc-daftar-gambar-container');
+            dgContainer.innerHTML = '';
+            
+            // Input rows to TOC
+            document.querySelectorAll('#daftar-gambar-inputs .table-builder-row').forEach(row => {
+                const caption = row.querySelector('.dg-caption').value;
+                const page = row.querySelector('.dg-page').value;
+                if(caption) {
+                    const div = document.createElement('div');
+                    div.className = 'toc-row';
+                    div.innerHTML = `<span class="toc-text">${caption}</span><span class="toc-dots"></span><span class="toc-page">${page}</span>`;
+                    dgContainer.appendChild(div);
                 }
-            ];
+            });
+            
+            // Save Daftar Gambar Data
+            const dgData = [];
+            document.querySelectorAll('#daftar-gambar-inputs .table-builder-row').forEach(row => {
+                dgData.push({
+                    caption: row.querySelector('.dg-caption').value,
+                    page: row.querySelector('.dg-page').value
+                });
+            });
+            localStorage.setItem('daftar-gambar-rows', JSON.stringify(dgData));
 
-            // Generate HTML
+            // Main Chapters
+            const container = document.getElementById('toc-container');
+            container.innerHTML = '';
+            const chapters = [
+                { id: 'bab1', titleInput: 'in-title-bab1', sub: [{l:'1.1 Latar Belakang',p:'1'},{l:'1.2 Tujuan PKL',p:'1'},{l:'1.3 Manfaat PKL',p:'1'},{l:'1.4 Waktu & Tempat',p:'1'},{l:'1.5 Metode',p:'1'}] },
+                { id: 'bab2', titleInput: 'in-title-bab2', sub: [{l:'2.1 Sejarah',p:'2'},{l:'2.2 Struktur',p:'2'},{l:'2.3 Visi Misi',p:'2'},{l:'2.4 Bidang Usaha',p:'2'},{l:'2.5 Tata Tertib',p:'2'}] },
+                { id: 'bab3', titleInput: 'in-title-bab3', sub: [{l:'3.1 Kegiatan',p:'3'},{l:'3.2 Proses',p:'3'},{l:'3.3 Kendala',p:'3'},{l:'3.4 Solusi',p:'3'},{l:'3.5 Jurnal',p:'3'},{l:'3.6 Dokumentasi',p:'3'},{l:'3.7 Hasil',p:'3'}] },
+                { id: 'bab4', titleInput: 'in-title-bab4', sub: [{l:'4.1 Kesimpulan',p:'4'},{l:'4.2 Saran',p:'4'}] }
+            ];
+            
             chapters.forEach(chap => {
                 const title = document.getElementById(chap.titleInput).value;
-                
-                // Chapter Title
                 const chapDiv = document.createElement('div');
-                chapDiv.className = 'toc-chapter';
-                chapDiv.innerText = title;
+                chapDiv.className = 'toc-row';
+                chapDiv.innerHTML = `<span class="toc-text">${title}</span><span class="toc-dots"></span><span class="toc-page"></span>`; // Auto page numbers not dynamic for simplicity
                 container.appendChild(chapDiv);
-
-                // Sub Items
-                chap.subItems.forEach(sub => {
+                
+                chap.sub.forEach(sub => {
                     const subDiv = document.createElement('div');
-                    subDiv.className = 'toc-sub';
-                    subDiv.innerHTML = `<span>${sub.label}</span> <span class="toc-page-num">${sub.page}</span>`;
+                    subDiv.className = 'toc-row';
+                    subDiv.innerHTML = `<span class="toc-text">${sub.l}</span><span class="toc-dots"></span><span class="toc-page">${sub.p}</span>`;
                     container.appendChild(subDiv);
                 });
             });
 
-            // Daftar Pustaka
             const pustakaDiv = document.createElement('div');
-            pustakaDiv.style.display = 'flex';
-            pustakaDiv.style.justifyContent = 'space-between';
-            pustakaDiv.style.marginBottom = '6px';
-            pustakaDiv.style.marginTop = '10px';
-            pustakaDiv.innerHTML = `<span>DAFTAR PUSTAKA</span> <span class="toc-page-num">13</span>`;
+            pustakaDiv.className = 'toc-row';
+            pustakaDiv.innerHTML = `<span class="toc-text">Daftar Pustaka</span><span class="toc-dots"></span><span class="toc-page"></span>`;
             container.appendChild(pustakaDiv);
 
-            // Update manual front matter numbers in TOC
-            document.getElementById('out-toc-pengesahan').innerText = document.getElementById('in-hal-pengesahan').value;
-            document.getElementById('out-toc-pengantar').innerText = document.getElementById('in-hal-pengantar').value;
-            document.getElementById('out-toc-isi').innerText = document.getElementById('in-hal-isi').value;
+            const lampiranDiv = document.createElement('div');
+            lampiranDiv.className = 'toc-row';
+            lampiranDiv.innerHTML = `<span class="toc-text">Lampiran</span><span class="toc-dots"></span><span class="toc-page"></span>`;
+            container.appendChild(lampiranDiv);
+
+            // Update Roman Numbers
+            document.getElementById('out-hal-toc-motto').innerText = document.getElementById('in-hal-motto').value;
+            document.getElementById('out-hal-toc-pengantar').innerText = document.getElementById('in-hal-pengantar').value;
+            document.getElementById('out-hal-toc-isi').innerText = document.getElementById('in-hal-isi').value;
         }
 
-        // --- 4. DOCUMENT UPDATE LOGIC ---
         function updateDoc() {
-            // Standard Input Mapping
             const map = [
-                ['in-judul', 'out-judul', 'out-judul-pengesahan'],
-                ['in-nama', 'out-nama', 'out-nama-pengesahan', 'out-nama-ttd'],
-                ['in-nis', 'out-nis', 'out-nis-pengesahan'],
-                ['in-jurusan', 'out-jurusan'],
-                ['in-sekolah', 'out-sekolah'],
+                ['in-nama', 'out-nama-cover', 'out-nama-pengesahan', 'out-nama-perusahaan', 'out-nama-ttd'],
+                ['in-nis', 'out-nis-cover', 'out-nis-pengesahan'],
+                ['in-kelas', 'out-kelas-cover'],
+                ['in-jurusan', 'out-jurusan-cover', 'out-jurusan-pengesahan'],
+                ['in-sekolah', 'out-sekolah-cover', 'out-sekolah-pengesahan'],
+                ['in-tahun', 'out-tahun-cover'],
                 ['in-perusahaan', 'out-perusahaan-pengesahan'],
-                ['in-tahun', 'out-tahun'],
+                ['in-divisi', 'out-divisi-perusahaan'],
+                ['in-lama-pkl', 'out-lama-perusahaan'],
+                ['in-pem-lapangan', 'out-pem-lapangan-pengesahan'],
+                ['in-jabatan-pem', 'out-jabatan-perusahaan'],
                 ['in-pem-sekolah', 'out-pem-sekolah'],
-                ['in-nip-sekolah', 'out-nip-sekolah'],
-                ['in-pem-industri', 'out-pem-industri'],
-                ['in-jabatan-industri', 'out-jabatan-industri'],
+                ['in-kaprog', 'out-kaprog'],
                 ['in-kepsek', 'out-kepsek'],
+                ['in-nip-kepsek', 'out-nip-kepsek'],
+                ['in-pimpinan', 'out-pimpinan-pengesahan'],
+                ['in-motto', 'out-motto'],
+                ['in-topik', 'out-topik-cover', 'out-topik-pengesahan'],
                 ['in-tempat-tgl', 'out-tempat-tgl'],
+                ['in-caption-dokumentasi', 'out-caption-dokumentasi'],
             ];
-
             map.forEach(([inputId, ...outputIds]) => {
                 const val = document.getElementById(inputId).value;
-                outputIds.forEach(id => {
-                    document.getElementById(id).innerText = val;
-                });
+                outputIds.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerText = val; });
             });
 
-            // Update Chapter Headers in Document Body
-            const chapMap = [
-                ['in-title-bab1', 'out-header-bab1'],
-                ['in-title-bab2', 'out-header-bab2'],
-                ['in-title-bab3', 'out-header-bab3'],
-                ['in-title-bab4', 'out-header-bab4'],
-            ];
-
-            chapMap.forEach(([inputId, outId]) => {
-                const val = document.getElementById(inputId).value;
-                if(document.getElementById(outId)) document.getElementById(outId).innerText = val;
+            [['in-title-bab1', 'out-header-bab1'], ['in-title-bab2', 'out-header-bab2'], ['in-title-bab3', 'out-header-bab3'], ['in-title-bab4', 'out-header-bab4']]
+            .forEach(([inId, outId]) => {
+                if(document.getElementById(outId)) document.getElementById(outId).innerText = document.getElementById(inId).value;
             });
 
-            // Re-render TOC when chapter titles change
             renderTOC();
 
-            // Helper for Textareas (Paragraphs)
             const updateText = (inId, outId) => {
                 const val = document.getElementById(inId).value;
-                const out = document.getElementById(outId);
-                if(out) out.innerText = val; 
+                if(document.getElementById(outId)) document.getElementById(outId).innerText = val; 
             };
-
-            updateText('in-pengantar', 'out-pengantar');
-            updateText('in-bab1-latbel', 'out-bab1-latbel');
-            updateText('in-bab1-tujuan', 'out-bab1-tujuan');
-            updateText('in-bab1-manfaat', 'out-bab1-manfaat');
-            updateText('in-bab1-waktu', 'out-bab1-waktu');
-            updateText('in-bab2-sejarah', 'out-bab2-sejarah');
-            updateText('in-bab2-visi', 'out-bab2-visi');
-            updateText('in-bab2-struktur', 'out-bab2-struktur');
-            updateText('in-bab3-deskripsi', 'out-bab3-deskripsi');
-            updateText('in-bab3-prosedur', 'out-bab3-prosedur');
-            updateText('in-bab3-hasil', 'out-bab3-hasil');
-            updateText('in-bab4-kesimpulan', 'out-bab4-kesimpulan');
-            updateText('in-bab4-saran', 'out-bab4-saran');
-            updateText('in-pustaka', 'out-pustaka');
+            ['in-pengantar','out-pengantar','in-bab1-latbel','out-bab1-latbel','in-bab1-tujuan','out-bab1-tujuan','in-bab1-manfaat','out-bab1-manfaat','in-bab1-waktu','out-bab1-waktu','in-bab1-metode','out-bab1-metode','in-bab2-sejarah','out-bab2-sejarah','in-bab2-struktur','out-bab2-struktur','in-bab2-visi','out-bab2-visi','in-bab2-bidang','out-bab2-bidang','in-bab2-tatatertib','out-bab2-tatatertib','in-bab3-kegiatan','out-bab3-kegiatan','in-bab3-proses','out-bab3-proses','in-bab3-kendala','out-bab3-kendala','in-bab3-solusi','out-bab3-solusi','in-bab3-hasil','out-bab3-hasil','in-bab4-kesimpulan','out-bab4-kesimpulan','in-bab4-saran','out-bab4-saran','in-pustaka','out-pustaka','in-lampiran','out-lampiran'].forEach((id, i, arr) => i%2==0 ? updateText(id, arr[i+1]) : null);
         }
     </script>
 </body>
